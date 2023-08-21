@@ -1,19 +1,63 @@
-import { Directive, ElementRef, OnInit } from '@angular/core';
+import { Directive, ElementRef, Input, OnInit } from '@angular/core';
+import { ValidationErrors } from '@angular/forms';
 
 @Directive({
   selector: '[customLabel]'
 })
 export class CustomLabelDirective implements OnInit {
   private htmlElement?: ElementRef<HTMLElement>;
+  private _color: string = 'red';
+  private _errors?: ValidationErrors | null;
 
-  constructor( private el: ElementRef<HTMLElement>) {
-    console.log('Hello CustomLabelDirective Directive');
-    console.log(el);
-    this.htmlElement = el;
-    this.htmlElement.nativeElement.innerHTML = 'throw an error';
+  @Input() set errors(value: ValidationErrors | null | undefined) {
+    this._errors = value;
+    this.setErrorMessage();
   }
+
+  @Input() set color(color: string) {
+    console.log({ color: color });
+    this._color = color;
+    this.setStyle();
+  }
+
+  constructor(private el: ElementRef<HTMLElement>) {
+    this.htmlElement = el;
+  }
+
   ngOnInit(): void {
-    console.log('Hello CustomLabelDirective Directive in OnInit');
+    this.setStyle();
+  }
+
+  setStyle(): void {
+    if (!this.htmlElement) return;
+    this.htmlElement!.nativeElement.style.color = this._color;
+  }
+
+  setErrorMessage(): void {
+    if (!this.htmlElement) return;
+
+    if (!this._errors) {
+      this.htmlElement.nativeElement.innerHTML = 'Completed';
+      return;
+    }
+
+    const errors = Object.keys(this._errors);
+
+    if (errors.includes('required')) {
+      this.htmlElement.nativeElement.innerHTML = 'The field is required';
+      return;
+    }
+
+    if (errors.includes('minlength')) {
+      const { requiredLength, actualLength } = this._errors!['minlength'];
+      this.htmlElement.nativeElement.innerHTML = `Min ${requiredLength} characters and current ${actualLength} characters`;
+      return;
+    }
+
+    if (errors.includes('email')) {
+      this.htmlElement.nativeElement.innerHTML = 'Please enter a valid email';
+      return;
+    }
   }
 
 }
